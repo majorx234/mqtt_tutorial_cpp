@@ -12,17 +12,32 @@ endif()
 if (NOT MOSQUITTO_LIBRARY)
   find_library(
     MOSQUITTO_LIBRARY
-    NAMES mosquitto)
+    NAMES mosquitto
+    PATHS
+    /usr/lib
+    /usr/local/lib
+  )
+endif()
+
+if (NOT MOSQUITTOPP_LIBRARY)
+  find_library(
+    MOSQUITTOPP_LIBRARY
+    NAMES mosquittopp
+    PATHS
+    /usr/lib
+    /usr/local/lib
+  )
 endif()
 
 include(FindPackageHandleStandardArgs)
 
 find_package_handle_standard_args(
   Mosquitto DEFAULT_MSG
-  MOSQUITTO_LIBRARY MOSQUITTO_INCLUDE_DIR)
+  MOSQUITTO_LIBRARY MOSQUITTOPP_LIBRARY MOSQUITTO_INCLUDE_DIR)
 
 message(STATUS "libmosquitto include dir: ${MOSQUITTO_INCLUDE_DIR}")
 message(STATUS "libmosquitto: ${MOSQUITTO_LIBRARY}")
-set(MOSQUITTO_LIBRARIES ${MOSQUITTO_LIBRARY})
+message(STATUS "libmosquittopp: ${MOSQUITTOPP_LIBRARY}")
+set(MOSQUITTO_LIBRARIES ${MOSQUITTO_LIBRARY} ${MOSQUITTOPP_LIBRARY})
 
 mark_as_advanced(MOSQUITTO_INCLUDE_DIR MOSQUITTO_LIBRARY)
