@@ -13,3 +13,18 @@
   - more examples in QT
 - https://github.com/majorx234/mqtt_paho_client
   - own example with paho library
+
+# mosquitto
+## installation
+- install with pacman: `sudo pacman -S mosquitto`
+- under debian with apt: `sudo apt install mosquitto libmosquitto-dev libmosquittopp-dev mosquitto-clients`
+
+## server
+- `systemctl start mosquitto.service`
+
+## mqtt_client_publisher
+- C++ test application
+- `mkdir build && cd build && cmake .. && make`
+- run with: `./mqtt_client_publisher`
+- check if data is published:
+  - `mosquitto_sub -h localhost -t testing`
