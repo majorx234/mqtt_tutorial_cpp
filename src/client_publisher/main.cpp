@@ -1,9 +1,12 @@
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <functional>
 #include <iostream>
 #include <signal.h>
+#include <sstream>
 #include <string>
 #include <unistd.h>
 
@@ -53,20 +56,24 @@ int main(int argc, char *argv[]) {
     std::cout << "Error no: " << connect_status << std::endl;
   }
 
+  uint64_t test_value = 0;
   while (!stop_main.load()) {
     /* Some workload may be here */
-    sleep(100); // Signals will interrupt this function.
 
-    std::string test_string = std::string("{value: \"test\"}");
+    std::stringstream ss;
+    ss << "{\"value\": \"" << test_value << "\"}";
+    size_t payload_length = strlen(ss.str().c_str());
     int publish_status = mqtt_client.publish(NULL, server_args.mqtt_channel_name,
-                                             strlen(test_string.c_str()),
-                                             test_string.c_str(), server_args.qos);
+                                             payload_length,
+                                             ss.str().c_str(), server_args.qos);
     if (publish_status == MOSQ_ERR_SUCCESS) {
       std::cout << "Sucessfully published!" << std::endl;
 
     } else {
       std::cout << "Error: not published code: " << publish_status << std::endl;
     }
+    test_value += 1;
+    sleep(1); // Signals will interrupt this function.
   }
   mosqpp::lib_cleanup();
 
