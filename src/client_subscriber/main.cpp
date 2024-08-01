@@ -36,6 +36,38 @@ void catchUnixSignal(int quitSignal) {
   sigaction(quitSignal, &sa, nullptr);
 }
 
+class MqttClient : public mosqpp::mosquittopp {
+public:
+  MqttClient(const char *id, bool clean_session);
+  ~MqttClient();
+  void register_message_callback(std::function<void(std::string)>);
+private:
+  void on_message(const struct mosquitto_message* message) override;
+  std::function<void(std::string)> message_cb;
+};
+
+MqttClient::MqttClient(const char *id, bool clean_session)
+    : mosqpp::mosquittopp(id, clean_session) {}
+
+MqttClient::~MqttClient() {
+  mosqpp::mosquittopp::~mosquittopp();
+}
+
+void MqttClient::on_message(const struct mosquitto_message* message) {
+  if (this->message_cb) {
+    std::string string_payload(static_cast<char*>(message->payload), message->payloadlen);
+    this->message_cb(string_payload);
+  }
+}
+
+void MqttClient::register_message_callback(std::function<void(std::string)> new_message_cb) {
+  this->message_cb = new_message_cb;
+}
+
+void message_callback(std::string message) {
+  std::cout << "messsage: " << message << std::endl;
+}
+
 int main(int argc, char *argv[]) {
   catchUnixSignal(SIGINT);
 
@@ -46,7 +78,10 @@ int main(int argc, char *argv[]) {
 
   mosqpp::lib_init();
   // create mosquitto mqtt client:
-  mosqpp::mosquittopp mqtt_client(server_args.client_id);
+  MqttClient mqtt_client(server_args.client_id, true);
+  std::function<void(std::string)> message_cb_fct = std::bind(message_callback, std::placeholders::_1);
+  mqtt_client.register_message_callback(message_cb_fct);
+
   int connect_status = mqtt_client.connect(server_args.broker_hostname, server_args.broker_port, server_args.keepalive);
 
   if (connect_status == MOSQ_ERR_SUCCESS) {
@@ -60,6 +95,7 @@ int main(int argc, char *argv[]) {
     /* Some workload may be here */
     int set = mqtt_client.subscribe(NULL, server_args.mqtt_channel_name, server_args.qos);
     // TODO receive message here
+    mqtt_client.loop();
     sleep(1); // Signals will interrupt this function.
   }
   mosqpp::lib_cleanup();
