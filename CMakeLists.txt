@@ -16,6 +16,10 @@ set(CLIENT_PUBLISHER_MAIN_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/client_publisher/main.cpp
   )
 
+set(CLIENT_SUBSCRIBER_MAIN_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/client_subscriber/main.cpp
+  )
+
 add_executable(mqtt_client_publisher)
 target_sources(mqtt_client_publisher
  PRIVATE
@@ -28,6 +32,23 @@ target_include_directories(mqtt_client_publisher SYSTEM
   ${MOSQUITTO_INCLUDE_DIR}
 )
 target_link_libraries(mqtt_client_publisher
+ PRIVATE
+  ${MOSQUITTO_LIBRARIES}
+)
+
+
+add_executable(mqtt_client_subscriber)
+target_sources(mqtt_client_subscriber
+ PRIVATE
+    ${CLIENT_SUBSCRIBER_MAIN_SOURCES}
+)
+target_include_directories(mqtt_client_subscriber SYSTEM
+ PRIVATE
+  include
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${MOSQUITTO_INCLUDE_DIR}
+)
+target_link_libraries(mqtt_client_subscriber
  PRIVATE
   ${MOSQUITTO_LIBRARIES}
 )
