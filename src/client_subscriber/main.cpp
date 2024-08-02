@@ -10,13 +10,14 @@
 #include <string>
 #include <unistd.h>
 
-#include "mqtt_server_conf.hpp"
 #include <mosquittopp.h>
+#include "mqtt_server_conf.hpp"
+#include "mqtt_client.hpp"
+
 
 #define MAX_PAYLOAD 50
 #define DEFAULT_KEEP_ALIVE 60
 
-typedef std::function<void(std::string)> StringCB;
 std::atomic<int> stop_main = 0;
 
 void catchUnixSignal(int quitSignal) {
@@ -35,34 +36,6 @@ void catchUnixSignal(int quitSignal) {
   sa.sa_flags = 0;
 
   sigaction(quitSignal, &sa, nullptr);
-}
-
-class MqttClient : public mosqpp::mosquittopp {
-public:
-  MqttClient(const char *id, bool clean_session);
-  ~MqttClient();
-  void register_message_callback(StringCB);
-private:
-  void on_message(const struct mosquitto_message* message) override;
-  StringCB message_cb;
-};
-
-MqttClient::MqttClient(const char *id, bool clean_session)
-    : mosqpp::mosquittopp(id, clean_session) {}
-
-MqttClient::~MqttClient() {
-  mosqpp::mosquittopp::~mosquittopp();
-}
-
-void MqttClient::on_message(const struct mosquitto_message* message) {
-  if (this->message_cb) {
-    std::string string_payload(static_cast<char*>(message->payload), message->payloadlen);
-    this->message_cb(string_payload);
-  }
-}
-
-void MqttClient::register_message_callback(StringCB new_message_cb) {
-  this->message_cb = new_message_cb;
 }
 
 void message_callback(std::string message) {

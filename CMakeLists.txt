@@ -18,6 +18,7 @@ set(CLIENT_PUBLISHER_MAIN_SOURCES
 
 set(CLIENT_SUBSCRIBER_MAIN_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/client_subscriber/main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/client_subscriber/mqtt_client.cpp
   )
 
 add_executable(mqtt_client_publisher)
