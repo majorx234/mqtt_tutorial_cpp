@@ -16,6 +16,7 @@
 #define MAX_PAYLOAD 50
 #define DEFAULT_KEEP_ALIVE 60
 
+typedef std::function<void(std::string)> StringCB;
 std::atomic<int> stop_main = 0;
 
 void catchUnixSignal(int quitSignal) {
@@ -40,10 +41,10 @@ class MqttClient : public mosqpp::mosquittopp {
 public:
   MqttClient(const char *id, bool clean_session);
   ~MqttClient();
-  void register_message_callback(std::function<void(std::string)>);
+  void register_message_callback(StringCB);
 private:
   void on_message(const struct mosquitto_message* message) override;
-  std::function<void(std::string)> message_cb;
+  StringCB message_cb;
 };
 
 MqttClient::MqttClient(const char *id, bool clean_session)
@@ -60,7 +61,7 @@ void MqttClient::on_message(const struct mosquitto_message* message) {
   }
 }
 
-void MqttClient::register_message_callback(std::function<void(std::string)> new_message_cb) {
+void MqttClient::register_message_callback(StringCB new_message_cb) {
   this->message_cb = new_message_cb;
 }
 
@@ -73,13 +74,19 @@ int main(int argc, char *argv[]) {
 
   MqttServerConf server_args = {
       // Todo store Commandline args here
-      .client_id = "client_publisher",     .broker_hostname = "localhost",  .broker_port = 1883, .location = "location",
-      .mqtt_channel_name = "testing", .keepalive = DEFAULT_KEEP_ALIVE, .qos = MQTT_QOS_0};
+      .client_id = "client_subscriber",
+      .broker_hostname = "localhost",
+      .broker_port = 1883,
+      .location = "location",
+      .mqtt_channel_name = "testing",
+      .keepalive = DEFAULT_KEEP_ALIVE,
+      .qos = MQTT_QOS_0
+  };
 
   mosqpp::lib_init();
   // create mosquitto mqtt client:
   MqttClient mqtt_client(server_args.client_id, true);
-  std::function<void(std::string)> message_cb_fct = std::bind(message_callback, std::placeholders::_1);
+  StringCB message_cb_fct = std::bind(message_callback, std::placeholders::_1);
   mqtt_client.register_message_callback(message_cb_fct);
 
   int connect_status = mqtt_client.connect(server_args.broker_hostname, server_args.broker_port, server_args.keepalive);
@@ -89,14 +96,13 @@ int main(int argc, char *argv[]) {
   } else {
     std::cout << "Error no: " << connect_status << std::endl;
   }
+  int set = mqtt_client.subscribe(NULL, server_args.mqtt_channel_name, server_args.qos);
 
   uint64_t test_value = 0;
   while (!stop_main.load()) {
     /* Some workload may be here */
-    int set = mqtt_client.subscribe(NULL, server_args.mqtt_channel_name, server_args.qos);
     // TODO receive message here
-    mqtt_client.loop();
-    sleep(1); // Signals will interrupt this function.
+    mqtt_client.loop(10, 1);
   }
   mosqpp::lib_cleanup();
 
