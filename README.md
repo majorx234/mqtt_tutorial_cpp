@@ -28,3 +28,19 @@
 - run with: `./mqtt_client_publisher`
 - check if data is published:
   - `mosquitto_sub -h localhost -t testing`
+
+## mqtt_client_subscriber
+ C++ test application
+- `mkdir build && cd build && cmake .. && make`
+- run with: `./mqtt_client_publisher`
+- subscribes topic "testing" and prints
+- published to test:
+  - `mosquitto_pub -h localhost -t testing -m "{\"value\":\"1234\"}"`
+### implementation
+- files:`mqtt_client.hpp` and `mqtt_client.hpp`
+  - class `MqttClient` extends `mosqpp::mosquittopp`
+  - needs to implement virtual `on_message`-function
+    - these function is called event driven
+    - `mosquitto_message` parameter has attribute `payload`
+- `MqttClient` has function to register callbacks: `register_message_callback`
+- in `main.cpp` a callback is implemented and registred via `register_message_callback`
